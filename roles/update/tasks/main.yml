@@ -7,6 +7,12 @@
     state: stopped
   become: yes
 
+- name: stop mongo service
+  service:
+    name: mongod
+    state: stopped
+  become: yes
+
 
 - name: upgrade all packages
   yum:
@@ -23,6 +29,12 @@
     remote_src: yes
   become: yes
 
+- name: delete old UniFi folder
+  file:
+    path: /opt/UniFi
+    state: absent
+  become: yes
+
 - name: download new unifi package
   unarchive:
     src: 'http://dl.ubnt.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip'
@@ -30,7 +42,23 @@
     owner: ubnt
     group: ubnt
     remote_src: yes
-    keep_newer: yes
+  become: yes
+
+- name: copy data & configuration files
+  copy:
+    src: /opt/UniFi_old/data
+    dest: /opt/UniFi/data
+    owner: ubnt
+    group: ubnt
+    remote_src: yes
+  become: yes
+
+
+- name: start mongo service
+  service:
+    name: mongod
+    state: started
+    enabled: yes
   become: yes
 
 - name: start unifi service

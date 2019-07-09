@@ -8,12 +8,31 @@
     lock_timeout: 120
   become: yes
 
+- name: adding the MongoDB repo
+  yum_repository:
+    name: mongodb-org-4.0
+    description: MongoDB Repository
+    baseurl: https://repo.mongodb.org/yum/amazon/2/mongodb-org/4.0/x86_64/
+    gpgcheck: yes
+    enabled: yes
+    gpgkey: https://www.mongodb.org/static/pgp/server-4.0.asc
+  become: yes
+
+
 - name: install mongo-server
   yum: 
-    name: mongodb-server
+    name: mongodb-org
     state: latest
     lock_timeout: 120
   become: yes
+
+- name: start mongo-server
+  service:
+    name: mongod
+    state: started
+    enabled: yes
+  become: yes
+
 
 - name: create ubnt user
   user:
