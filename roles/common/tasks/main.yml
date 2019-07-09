@@ -78,11 +78,10 @@
     state: started
   become: yes
 
-- name: Setup timezone to America/chicago
+- name: Setup timezone
   timezone:
-    name: America/Chicago
+    name: '{{ _time_zone_ }}'
   become: yes
-
 
 - name: install yum-cron
   yum:
