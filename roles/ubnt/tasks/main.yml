@@ -2,9 +2,9 @@
 # tasks file for ubnt
 
 
-- name: install Java 11
+- name: install Java openjdk
   yum:
-    name: java-11-openjdk-devel
+    name: java-1.8.0-openjdk-devel
     lock_timeout: 120
   become: yes
 
@@ -22,14 +22,13 @@
   become: yes
 
 
-
-
 - name: download unifi package
   unarchive:
     src: 'http://dl.ubnt.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip'
     dest: /opt/
     owner: ubnt
     group: ubnt
+    keep_newer: yes
     remote_src: yes
   become: yes
 
@@ -38,7 +37,7 @@
     src: ../files/unifi.service
     dest: /etc/systemd/system/
   become: yes
-  
+
 - name: start unifi service
   service: 
     name: unifi
