@@ -1,0 +1,8 @@
+---
+
+- hosts: ubnt
+  become: yes
+
+  roles:
+    - common
+    - ubnt

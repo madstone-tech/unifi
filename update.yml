@@ -1,0 +1,7 @@
+---
+
+- hosts: ubnt
+  become: yes
+
+  roles:
+    - update

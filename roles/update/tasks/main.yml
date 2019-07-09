@@ -1,0 +1,41 @@
+---
+# tasks file for update
+
+- name: stop unifi service
+  service:
+    name: unifi
+    state: stopped
+  become: yes
+
+
+- name: upgrade all packages
+  yum:
+    name: '*'
+    state: latest
+    lock_timeout: 120
+  become: yes
+
+
+- name: copy UniFi folder
+  copy:
+    src: /opt/UniFi
+    dest: /opt/UniFi_old
+    remote_src: yes
+  become: yes
+
+- name: download new unifi package
+  unarchive:
+    src: 'http://dl.ubnt.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip'
+    dest: /opt/
+    owner: ubnt
+    group: ubnt
+    remote_src: yes
+    keep_newer: yes
+  become: yes
+
+- name: start unifi service
+  service:
+    name: unifi
+    state: started
+    enabled: yes
+  become: yes

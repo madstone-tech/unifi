@@ -1,0 +1,47 @@
+---
+# tasks file for ubnt
+
+
+- name: install Java 11
+  yum:
+    name: java-11-openjdk-devel
+    lock_timeout: 120
+  become: yes
+
+- name: install mongo-server
+  yum: 
+    name: mongodb-server
+    state: latest
+    lock_timeout: 120
+  become: yes
+
+- name: create ubnt user
+  user:
+    name: ubnt
+    create_home: no
+  become: yes
+
+
+
+
+- name: download unifi package
+  unarchive:
+    src: 'http://dl.ubnt.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip'
+    dest: /opt/
+    owner: ubnt
+    group: ubnt
+    remote_src: yes
+  become: yes
+
+- name: copy unifi.service
+  copy:
+    src: ../files/unifi.service
+    dest: /etc/systemd/system/
+  become: yes
+  
+- name: start unifi service
+  service: 
+    name: unifi
+    state: started
+    enabled: yes
+  become: yes
