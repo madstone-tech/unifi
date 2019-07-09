@@ -41,6 +41,7 @@ Requirements
 ------------
 
 * Amazon-linux-2
+* ansible 2.8+
   
 Role Variables
 --------------
@@ -50,6 +51,16 @@ Role Variables
 | ---------------- | ----------------- |
 | `_ubnt_version_` | `5.10.25`         |
 | `_time_zone_`    | `America/Chicago` |
+
+Variables can be changed in the `group_vars/all.yml` file
+
+Running the Playbook
+====================
+
+1. download the repo
+2. update the variables to reflect your environment
+3. modify the `production` file with your environment ip (localhost or remote)
+4. to run the playbook type `ansible-playbook -i production site.yml`   
 
 
 File Directory
@@ -81,6 +92,8 @@ File Directory
 ├── Vagrantfile
 
 ```
+
+
 
 License
 -------
