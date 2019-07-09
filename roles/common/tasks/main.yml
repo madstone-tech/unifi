@@ -2,7 +2,7 @@
 # tasks file for common
 
 - name: Enable Extra amazon-linux-extra repo
-  shell: amazon-linux-extras install epel java-openjdk11 -y 
+  shell: amazon-linux-extras install epel -y 
   become: yes 
 
 - name: install fail2ban
