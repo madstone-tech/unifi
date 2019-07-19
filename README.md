@@ -54,13 +54,19 @@ Role Variables
 
 Variables can be changed in the `group_vars/all.yml` file
 
-Running the Playbook
-====================
+Run Playbook for install
+=========================
 
 1. download the repo
 2. update the variables to reflect your environment
 3. modify the `production` file with your environment ip (localhost or remote)
 4. to run the playbook type `ansible-playbook -i production site.yml`   
+
+Run Playbook for update
+=======================
+
+1. udpate the `_ubnt_version_` in the `group_vars/all.yml` file
+2. to run the playbook to update the controller type `ansible-playbook -i production update.yml`
 
 
 File Directory
