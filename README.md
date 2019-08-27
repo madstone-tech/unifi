@@ -49,7 +49,7 @@ Role Variables
 
 | variable         | default           |
 | ---------------- | ----------------- |
-| `_ubnt_version_` | `5.10.25`         |
+| `_ubnt_version_` | `5.11.39`         |
 | `_time_zone_`    | `America/Chicago` |
 
 Variables can be changed in the `group_vars/all.yml` file
