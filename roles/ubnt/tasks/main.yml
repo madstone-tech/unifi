@@ -1,6 +1,4 @@
 ---
-# tasks file for ubnt
-
 
 - name: install Java openjdk
   yum:
@@ -18,7 +16,6 @@
     gpgkey: https://www.mongodb.org/static/pgp/server-4.0.asc
   become: yes
 
-
 - name: install mongo-server
   yum: 
     name: mongodb-org
@@ -33,13 +30,11 @@
     enabled: yes
   become: yes
 
-
 - name: create ubnt user
   user:
     name: ubnt
     create_home: no
   become: yes
-
 
 - name: download unifi package
   unarchive:

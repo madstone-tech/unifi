@@ -1,5 +1,4 @@
 ---
-# tasks file for common
 
 - name: Enable Extra amazon-linux-extra repo
   shell: amazon-linux-extras install epel -y 
@@ -48,7 +47,6 @@
     permanent: yes
     state: enabled
   become: yes
-
 
 - name: enable firewalld service
   service:

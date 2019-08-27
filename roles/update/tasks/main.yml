@@ -13,14 +13,12 @@
     state: stopped
   become: yes
 
-
 - name: upgrade all packages
   yum:
     name: '*'
     state: latest
     lock_timeout: 120
   become: yes
-
 
 - name: copy UniFi folder
   copy:
@@ -46,13 +44,12 @@
 
 - name: copy data & configuration files
   copy:
-    src: /opt/UniFi_old/data
-    dest: /opt/UniFi/data
+    src: /opt/UniFi_old/UniFi/data
+    dest: /opt/UniFi/
     owner: ubnt
     group: ubnt
     remote_src: yes
   become: yes
-
 
 - name: start mongo service
   service:
