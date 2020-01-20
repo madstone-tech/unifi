@@ -38,7 +38,7 @@
 
 - name: download unifi package
   unarchive:
-    src: 'http://dl.ubnt.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip'
+    src: 'https://dl.ui.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip'
     dest: /opt/
     owner: ubnt
     group: ubnt
