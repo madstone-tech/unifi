@@ -98,7 +98,7 @@ Resources:
       PlatformVersion: "1.4.0"
       LoadBalancers:
         - ContainerName: "unifi-controller"
-          ContainerPort: 80
+          ContainerPort: 8080
           TargetGroupArn: !Ref TargetGroupArn
       NetworkConfiguration:
         AwsvpcConfiguration:
