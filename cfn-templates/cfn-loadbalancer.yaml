@@ -57,15 +57,15 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref UniFiControllerTargetGroup
 
-  #LoadBalancerListenerPort10001:
-  #  Type: AWS::ElasticLoadBalancingV2::Listener
-  #  Properties:
-  #    LoadBalancerArn: !Ref LoadBalancer
-  #    Port: 10001
-  #    Protocol: UDP
-  #    DefaultActions:
-  #      - TargetGroupArn: !Ref UniFiControllerTargetGroup
-  #        Type: forward
+  LoadBalancerListenerPort10001:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 10001
+      Protocol: UDP
+      DefaultActions:
+        - TargetGroupArn: !Ref UniFiControllerTargetGroup
+          Type: forward
   #LoadBalancerListenerPort8443:
   #  Type: AWS::ElasticLoadBalancingV2::Listener
   #  Properties:
