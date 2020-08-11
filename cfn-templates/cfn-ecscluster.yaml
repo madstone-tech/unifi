@@ -1,0 +1,177 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  ECS Cluster
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Name of the environment
+
+  SSHKeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+
+  Subnets:
+    Description: Subnets to attach to the load balancer
+    Type: List<AWS::EC2::Subnet::Id>
+
+  BastionHostSG:
+    Description: "Security Group for Bastion Host"
+    Type: AWS::EC2::SecurityGroup::Id
+
+  InstanceProfile:
+    Description: "Instance profile role for the BastionHost instance"
+    Type: String
+
+  InstanceRole:
+    Description: "Role name instance"
+    Type: String
+    MinLength: 1
+
+  BastionHostInstanceType:
+    Type: String
+    Description: Bastion host instance type
+    Default: t2.micro
+
+  EFSId:
+    Description: EFS ID
+    Type: String
+
+  ECSDomain:
+    Type: String
+
+  ECRRepo:
+    Type: String
+    Description: ECR Repo
+
+
+  Latestx86AmiId:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${EnvironmentName}
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+
+  BastionHostAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      DesiredCapacity: "1"
+      MinSize: "1"
+      MaxSize: "2"
+      VPCZoneIdentifier:
+        - !Select [0, !Ref Subnets]
+        - !Select [1, !Ref Subnets]
+      MixedInstancesPolicy:
+        InstancesDistribution:
+          SpotAllocationStrategy: capacity-optimized
+        LaunchTemplate:
+          LaunchTemplateSpecification:
+            LaunchTemplateId: !Ref BastionHostLaunchTemplate
+            Version: !GetAtt BastionHostLaunchTemplate.LatestVersionNumber
+      Tags:
+        - Key: Name
+          Value: !Sub ${ECSDomain}-BastionHostAG
+          PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 1
+        PauseTime: PT15M
+        WaitOnResourceSignals: true
+
+  BastionHostLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Metadata:
+      AWS::CloudFormation::Authentication:
+        S3AccessCreds:
+          type: "S3"
+          roleName: !Ref InstanceRole
+          buckets:
+            - "aws-quickstart"
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            00-set-region:
+              command: !Sub aws configure set default.reion ${AWS::Region}
+            03_install_efs_utils:
+              command: yum install -y amazon-efs-utils -y
+            10-install-jq:
+              command: /usr/bin/yum install -y jq
+          files:
+            "/etc/cfn/cfn-hup.conf":
+              mode: 000400
+              owner: root
+              group: root
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+            "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.ContainerInstances.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource BastionHostLaunchTemplate
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+    Properties:
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Name: !Ref InstanceProfile
+        ImageId: !Ref Latestx86AmiId
+        InstanceInitiatedShutdownBehavior: terminate
+        InstanceType: !Ref BastionHostInstanceType
+        KeyName: !Ref SSHKeyPair
+        Monitoring:
+          Enabled: true
+        SecurityGroupIds:
+          - !Ref BastionHostSG
+        UserData:
+          Fn::Base64:
+            Fn::Sub:
+              - |
+                #!/bin/bash
+                yum install -y awslogs
+                systemctl enable awslogsd
+                systemctl start awslogsd
+                yum install -y amazon-efs-utils -y
+                hostnamectl set-hostname ${EnvironmentName}-bastionhost
+                mkdir unifi-volume
+                mount -t efs ${EFSId}:/ unifi-volume
+                yum install -y aws-cfn-bootstrap
+                /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource BastionHostLaunchTemplate
+                /opt/aws/bin/cfn-signal -e 0 --region ${AWS::Region} --stack ${AWS::StackName} --resource BastionHostAutoScalingGroup
+                yum install -y aws-cli
+                aws configure set default.region ${AWS::Region}
+                yum install -y aws-cli
+                aws configure set default.region ${AWS::Region}
+                yum install python3-pip -y
+                yum install git -y
+                pip3 install git-remote-codecommit
+                pip3 install ansible
+                pip3 install git-remote-codecommit
+                git clone -b cfn-templates codecommit://${ECRRepo}
+                ansible-playbook ${ECRRepo}/ansible/bastionhost.yml
+              - EFSId: !Ref EFSId
+                ECRRepo: !Ref ECRRepo
+
+Outputs:
+  Cluster:
+    Description: "ECS Cluster name"
+    Value: !Ref Cluster

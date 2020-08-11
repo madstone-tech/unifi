@@ -1,0 +1,16 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "S3: CFN template to create the S3 bucket needed to deploy Nested Stacks with CloudFormation"
+
+Resources:
+  WordpressS3Bucket:
+    Type: AWS::S3::Bucket
+
+Outputs:
+  WordpressS3BucketName:
+    Value: !Ref WordpressS3Bucket
+    Description: Name of the S3 bucket
+
+  WordpressS3BucketArn:
+    Value: !GetAtt WordpressS3Bucket.Arn
+    Description: Arn for RocketChat S3 Bucket

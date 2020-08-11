@@ -1,0 +1,143 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create MariaDB RDS Instance
+
+Parameters:
+  DBUsername:
+    Default: wordpressuser
+    NoEcho: "true"
+    Description: The database admin account username
+    Type: String
+    MinLength: "1"
+    MaxLength: "16"
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+
+  DBPassword:
+    NoEcho: "true"
+    Description: The database admin account password
+    Type: String
+    MinLength: "8"
+
+  DBName:
+    Description: Name of the database
+    Type: String
+
+  DBClass:
+    Description: Database instance class
+    Type: String
+    Default: "db.t3.micro"
+    AllowedValues:
+      - db.t3.micro
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+      - db.t3.xlarge
+      - db.t3.2xlarge
+    ConstraintDescription: must select a valid database instance type.
+
+  DBAllocatedStorage:
+    Default: "5"
+    Description: The size of the database (Gb)
+    Type: Number
+    MinValue: "5"
+    MaxValue: "6144"
+    ConstraintDescription: must be between 5+
+
+  MultiAZ:
+    Description: Multi-AZ master database
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    ConstraintDescription: must be true or false.
+
+  Replica:
+    Description: Make a database replica
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+
+  DBBackupRetentionPeriod:
+    Description: "The number of days to keep snapshots of the database."
+    Type: Number
+    Default: 30
+
+  AppDBSubnetId:
+    Description: SubnetId for database
+    Type: CommaDelimitedList
+
+  SecurityGroup:
+    Description: SecurityGroup
+    Type: AWS::EC2::SecurityGroup::Id
+
+Conditions:
+  CreateReplica: !Equals [!Ref Replica, true]
+
+Resources:
+  AppDBParameterGroup:
+    Type: "AWS::RDS::DBParameterGroup"
+    Properties:
+      Description: Wordpress Database Parameter Group
+      Family: mariadb10.4
+
+  DBSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      Tags:
+        - Key: stack
+          Value: !Ref AWS::StackName
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DBSubnetGroup"
+      DBSubnetGroupDescription: "DB subnet group"
+      SubnetIds:
+        - !Select [0, !Ref AppDBSubnetId]
+        - !Select [1, !Ref AppDBSubnetId]
+
+  MasterDB:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      AllocatedStorage: !Ref DBAllocatedStorage
+      DBInstanceClass: !Ref DBClass
+      StorageType: gp2
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: !Ref DBName
+      MultiAZ: !Ref MultiAZ
+      BackupRetentionPeriod: !Ref DBBackupRetentionPeriod
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBParameterGroupName: !Ref AppDBParameterGroup
+      Engine: mariadb
+      EngineVersion: "10.4.13"
+      VPCSecurityGroups:
+        - !Ref SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DBMaster"
+
+  ReplicaDB:
+    Type: "AWS::RDS::DBInstance"
+    Condition: CreateReplica
+    Properties:
+      SourceDBInstanceIdentifier: !Ref MasterDB
+      DBInstanceClass: !Ref DBClass
+      StorageType: gp2
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-DBReplica"
+
+Outputs:
+  DBAddress:
+    Description: address pf database endpoint
+    Value: !GetAtt
+      - MasterDB
+      - Endpoint.Address
+
+  DBPort:
+    Description: address pf database endpoint
+    Value: !GetAtt
+      - MasterDB
+      - Endpoint.Port

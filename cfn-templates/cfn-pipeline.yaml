@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "UniFi Controller CFN Pipeline"
+Parameters:
+  BranchName:
+    Type: String
+    Default: master
+  RepositoryName:
+    Type: String
+
+Resources:
+  ArtifactS3Bucket:
+    Type: AWS::S3::Bucket
+
+  CfnTemplateS3:
+    Type: AWS::S3::Bucket
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - ecs:*
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - cloudformation:*
+                  - iam:PassRole
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:UploadArchive
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:CancelUploadArchive
+                  - ssm:*
+
+  CodePipelinePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Location: !Sub ${ArtifactS3Bucket}
+        Type: "S3"
+      Stages:
+        - Actions:
+            - ActionTypeId:
+                Category: "Source"
+                Owner: "AWS"
+                Provider: "CodeCommit"
+                Version: "1"
+              Configuration:
+                BranchName: !Ref BranchName
+                PollForSourceChanges: "false"
+                RepositoryName: !Ref RepositoryName
+              Name: "Source"
+              OutputArtifacts:
+                - Name: Artifact
+              Region: !Ref AWS::Region
+              Namespace: "SourceVariables"
+              RunOrder: 1
+          Name: "Source"
+        - Actions:
+          Name: "Deploy"
+            - ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Provider: "S3"
+                Version: "1"
+              Configuration:
+                BucketName: !Ref CfnTemplateS3
+                Extract: "true"
+              Name: "Deploy"
+              Region: !Ref AWS::Region
+              Namespace: "DeployVariables"
+              RunOrder: 1
+              InputArtifacts:
+                - Name: Artifact
+            - ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Provider: "S3"
+                Version: "1"
+              Configuration:
+                BucketName: !Ref CfnTemplateS3
+                Extract: "true"
+              Name: "ZipToS3"
+              Region: !Ref AWS::Region
+              Namespace: "DeployVariables"
+              RunOrder: 2
+              InputArtifacts:
+                - Name: Artifact
+            - ActionTypeId:
+                Category: "Deploy"
+                Owner: "AWS"
+                Provider: "CloudFormation"
+                Version: "1"
+              Configuration:
+                ActionMode: "CREATE_UPDATE"
+                Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND"
+                RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CloudFormationAdminRole"
+                StackName: "unifi-controller"
+                TemplateConfiguration: "SourceArtifact::cfn-templates/parameters/cfn-parameters.json"
+                TemplatePath: "SourceArtifact::cfn-templates/cfn-master.yaml"
+                ParameterOverrides: !Sub |
+                  {
+                    "S3BucketCFNTemplates": "${CfnTemplateS3}"
+                  }
+              InputArtifacts:
+                - Name: Artifact
+              Name: "DeployStack"
+              Region: !Ref AWS::Region
+              RunOrder: 3

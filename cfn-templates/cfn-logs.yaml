@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  CloudFormation Template to create the logs groups
+
+Parameters:
+  ClusterName:
+    Type: String
+
+Resources:
+  ContainerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${ClusterName}"
+      RetentionInDays: 7
+

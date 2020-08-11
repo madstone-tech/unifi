@@ -1,0 +1,142 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Create SSM Paramater stores to store parameters
+
+Parameters:
+  EnvironmentName:
+    Type: String
+
+  WordpressDbHostParam:
+    Type: String
+
+  WordpressDbUserParam:
+    Type: String
+
+  WordpressDbPasswordParam:
+    Type: String
+
+  WordpressDbNameParam:
+    Type: String
+
+  WordpressTablePrefixParam:
+    Type: String
+    NoEcho: "true"
+
+  WordpressAuthKeyParam:
+    Type: String
+
+  WordpressSecureAuthKeyParam:
+    Type: String
+    NoEcho: "true"
+
+  WordpressLoggedInKeyParam:
+    Type: String
+
+  WordpressNonceKeyParam:
+    Type: String
+    NoEcho: "true"
+
+  WordpressAuthSaltParam:
+    Type: String
+
+  WordpressSecureAuthSaltParam:
+    Type: String
+
+  WordpressNonceSaltParam:
+    Type: String
+
+  WordpressLoggedInSaltParam:
+    Type: String
+
+Resources:
+  WordpressDbHost:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_DB_HOST
+      Type: String
+      Value: !Ref WordpressDbHostParam
+
+  WordpressDbUser:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_DB_USER
+      Type: String
+      Value: !Ref WordpressDbUserParam
+
+  WordpressDbPassword:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_DB_PASSWORD
+      Type: String
+      Value: !Ref WordpressDbPasswordParam
+
+  WordpressDbName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_DB_NAME
+      Type: String
+      Value: !Ref WordpressDbNameParam
+
+  WordpressTablePrefix:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_TABLE_PREFIX
+      Type: String
+      Value: !Ref WordpressTablePrefixParam
+
+  WordpressAuthKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_AUTH_KEY
+      Type: String
+      Value: !Ref WordpressAuthKeyParam
+
+  WordpressSecureAuthKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_SECURE_AUTH_KEY
+      Type: String
+      Value: !Ref WordpressSecureAuthKeyParam
+
+  WordpressLoggedInKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_LOGGED_IN_KEY
+      Type: String
+      Value: !Ref WordpressLoggedInKeyParam
+
+  WordpressNonceKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_NONCE_KEY
+      Type: String
+      Value: !Ref WordpressNonceKeyParam
+
+  WordpressAuthSalt:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_AUTH_SALT
+      Type: String
+      Value: !Ref WordpressAuthSaltParam
+
+  WordpressSecureAuthSalt:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_SECURE_AUTH_SALT
+      Type: String
+      Value: !Ref WordpressSecureAuthSaltParam
+
+  WordpressNonceSalt:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_NONCE_SALT
+      Type: String
+      Value: !Ref WordpressNonceSaltParam
+
+  WordpressLoggedInSalt:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${EnvironmentName}/WORDPRESS_LOGGED_IN_SALT
+      Type: String
+      Value: !Ref WordpressLoggedInSaltParam

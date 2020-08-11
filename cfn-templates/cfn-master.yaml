@@ -1,0 +1,197 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Root Cloudformation Stack Template to deploy Unifi controller on ECS
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "S3 Bucket for CloudFormation"
+        Parameters:
+          - S3BucketCFNTemplates
+      - Label:
+          default: "Domain Parameters"
+        Parameters:
+          - Route53ZoneName
+          - HostedZoneId
+          - ECSDomain
+      - Label:
+          default: "Cluster Environment Parameters"
+        Parameters:
+          - SSHKeyPair
+          - EnvironmentName
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Name of the environment
+
+  Route53ZoneName:
+    Type: String
+    Description: Name of your Route53 ZoneName
+
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Pick the HostedZoneId of the Route53 Zone Name
+
+  ECSDomain:
+    Type: String
+    Description: base domain of the app i.e. ubnt.domain.com
+
+  S3BucketCFNTemplates:
+    Type: String
+    Description: S3 Bucket for Cloudformation Template
+
+  SSHKeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-vpc-2azs.yaml
+
+  ACMCerts:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        ZoneName: !Ref Route53ZoneName
+        ECSDomainName: !Ref ECSDomain
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-acm.yaml
+
+  SecurityGroups:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        Vpc: !GetAtt VPC.Outputs.VpcId
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-securitygroups.yaml
+
+  S3Bucket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-s3buckets.yaml
+
+  LoadBalancer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        CertificateArn: !GetAtt ACMCerts.Outputs.certificateArn
+        Vpc: !GetAtt VPC.Outputs.VpcId
+        Subnets: !Join
+          - ","
+          - - !GetAtt "VPC.Outputs.SubnetAPublic"
+            - !GetAtt "VPC.Outputs.SubnetBPublic"
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
+        LoadBalancerScheme: "internet-facing"
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-loadbalancer.yaml
+
+  IAMRoles:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-iamroles.yaml
+
+  LogGroupName:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        ClusterName: !GetAtt ECSCluster.Outputs.Cluster
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-logs.yaml
+
+  DNSRecords:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        HostedZoneId: !Ref HostedZoneId
+        LoadBalancerHostedZoneId: !GetAtt LoadBalancer.Outputs.LoadBalancerHostedZoneId
+        LoadBalancerDns: !GetAtt LoadBalancer.Outputs.LoadBalancerDns
+        ECSDomain: !Ref ECSDomain
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-dns-records.yaml
+
+  EFS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        Subnets: !Join
+          - ","
+          - - !GetAtt "VPC.Outputs.SubnetAPrivate"
+            - !GetAtt "VPC.Outputs.SubnetBPrivate"
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.EFSSG
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-efs.yaml
+
+  ECSCluster:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SSHKeyPair: !Ref SSHKeyPair
+        Subnets: !Join
+          - ","
+          - - !GetAtt "VPC.Outputs.SubnetAPublic"
+            - !GetAtt "VPC.Outputs.SubnetBPublic"
+        BastionHostSG: !GetAtt SecurityGroups.Outputs.EC2SecurityGroup
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.WordpressSG
+        InstanceProfile: !GetAtt IAMRoles.Outputs.EC2InstanceProfile
+        InstanceRole: !GetAtt IAMRoles.Outputs.EC2InstanceRole
+        EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
+        ECSDomain: !Ref ECSDomain
+        EnvironmentName: !Ref EnvironmentName
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-ecscluster.yaml
+
+  UniFiController:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        ECSCluster: !GetAtt ECSCluster.Outputs.Cluster
+        ContainerCpu: "1024"
+        ContainerMemory: "2048"
+        ClusterRoleArn: !GetAtt IAMRoles.Outputs.ECSClusterRole
+        TargetGroupArn: !GetAtt LoadBalancer.Outputs.WordpressTargetGroupArn
+        Subnets: !Join
+          - ","
+          - - !GetAtt "VPC.Outputs.SubnetAPublic"
+            - !GetAtt "VPC.Outputs.SubnetBPublic"
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.WordpressSG
+        EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-unificontroller.yaml

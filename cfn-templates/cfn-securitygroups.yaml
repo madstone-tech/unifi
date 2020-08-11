@@ -1,0 +1,131 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create Security Groups
+
+Parameters:
+  Vpc:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for security groups
+
+Resources:
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "SSH"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+
+  LoadBalancerSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Unifi-Controller-LB"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - FromPort: 3478
+          IpProtocol: udp
+          ToPort: 3478
+          CidrIp: "0.0.0.0/0"
+        - FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
+          CidrIp: "0.0.0.0/0"
+        - FromPort: 8880
+          IpProtocol: tcp
+          ToPort: 8880
+          CidrIp: "0.0.0.0/0"
+        - FromPort: 8443
+          IpProtocol: tcp
+          ToPort: 8443
+          CidrIp: "0.0.0.0/0"
+        - FromPort: 6789
+          IpProtocol: tcp
+          ToPort: 6789
+          CidrIp: "0.0.0.0/0"
+        - FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+        - FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+
+  UnifiControllerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Unifi Controller SG access to Container"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - FromPort: 3478
+          IpProtocol: udp
+          ToPort: 3478
+          SourceSecurityGroupId:
+            Ref: LoadBalancerSecurityGroup
+        - FromPort: 8080
+          IpProtocol: tcp
+          ToPort: 8080
+          SourceSecurityGroupId:
+            Ref: LoadBalancerSecurityGroup
+        - FromPort: 8880
+          IpProtocol: tcp
+          ToPort: 8880
+          SourceSecurityGroupId:
+            Ref: LoadBalancerSecurityGroup
+        - FromPort: 8443
+          IpProtocol: tcp
+          ToPort: 8443
+          SourceSecurityGroupId:
+            Ref: LoadBalancerSecurityGroup
+        - FromPort: 6789
+          IpProtocol: tcp
+          ToPort: 6789
+          SourceSecurityGroupId:
+            Ref: LoadBalancerSecurityGroup
+        - FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+          SourceSecurityGroupId:
+            Ref: LoadBalancerSecurityGroup
+        - FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+          SourceSecurityGroupId:
+            Ref: LoadBalancerSecurityGroup
+
+  EFSSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "EFS Security Group"
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - FromPort: 2049
+          IpProtocol: tcp
+          ToPort: 2049
+          SourceSecurityGroupId:
+            Ref: UnifiControllerSG
+        - FromPort: 2049
+          IpProtocol: tcp
+          ToPort: 2049
+          SourceSecurityGroupId:
+            Ref: EC2SecurityGroup
+
+Outputs:
+  EC2SecurityGroup:
+    Description: "EC2 SG"
+    Value: !GetAtt EC2SecurityGroup.GroupId
+
+  LoadBalancerSecurityGroup:
+    Description: "LoadBalancer SG"
+    Value: !Ref LoadBalancerSecurityGroup
+
+  UnifiControllerSG:
+    Description: "Unifi Controller SG"
+    Value: !GetAtt UnifiControllerSG.GroupId
+
+  EFSSG:
+    Description: "EFS SG"
+    Value: !Ref EFSSG

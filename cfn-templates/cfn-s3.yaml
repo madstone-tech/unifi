@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Create an S3 bucket and configure it for s3-website hosting
+  Create a record in a pre-existing Route53 HostedZone and point at the newly created bucket
+Parameters:
+  HostedZoneID:
+    Description: The Hosted Zone ID in which to create the website DNS record
+    Type: AWS::Route53::HostedZone::Id
+  WebsiteAddress:
+    Description: >
+      The web address to host the website at. Must be a subdomain of the hostedzone domain.
+      An S3 bucket will be created with the same address. This bucket must not already exist
+      globally anywhere in S3. (This is a requirement/limitation of s3-website.)
+      Do not prefix with http e.g. blog.m-taylor.co.uk
+    Type: "String"
+Resources:
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref WebsiteAddress
+      WebsiteConfiguration:
+        ErrorDocument: "404.html"
+        IndexDocument: "index.html"
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          - Sid: "PublicReadForS3Website"
+            Action:
+              - "s3:GetObject"
+            Effect: "Allow"
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:s3:::"
+                  - Ref: "S3Bucket"
+                  - "/*"
+            Principal: "*"
+  R53Record:
+    Type: "AWS::Route53::RecordSet"
+    Properties:
+      Comment: "CNAME to S3-Website"
+      HostedZoneId: !Ref HostedZoneID
+      Type: A
+      Name: !Ref WebsiteAddress
+      AliasTarget:
+        DNSName:
+          !FindInMap [S3HostingZoneMap, !Ref "AWS::Region", "S3HostingEndpoint"]
+        HostedZoneId:
+          !FindInMap [S3HostingZoneMap, !Ref "AWS::Region", "S3HostingZone"]
+Mappings:
+  S3HostingZoneMap:
+    us-east-1:
+      S3HostingZone: "Z3AQBSTGFYJSTF"
+      S3HostingEndpoint: "s3-website-us-east-1.amazonaws.com"
+    us-east-2:
+      S3HostingZone: "Z2O1EMRO9K5GLX"
+      S3HostingEndpoint: "s3-website.us-east-2.amazonaws.com"
+    us-west-1:
+      S3HostingZone: "Z2F56UZL2M1ACD"
+      S3HostingEndpoint: "s3-website-us-west-1.amazonaws.com"
+    us-west-2:
+      S3HostingZone: "Z3BJ6K6RIION7M"
+      S3HostingEndpoint: "s3-website-us-west-2.amazonaws.com"
+    ca-central-1:
+      S3HostingZone: "Z1QDHH18159H29"
+      S3HostingEndpoint: "s3-website.ca-central-1.amazonaws.com"
+    ap-south-1:
+      S3HostingZone: "Z11RGJOFQNVJUP"
+      S3HostingEndpoint: "s3-website.ap-south-1.amazonaws.com"
+    ap-northeast-1:
+      S3HostingZone: "Z2M4EHUR26P7ZW"
+      S3HostingEndpoint: "s3-website-ap-northeast-1.amazonaws.com"
+    ap-northeast-2:
+      S3HostingZone: "Z3W03O7B5YMIYP"
+      S3HostingEndpoint: "s3-website.ap-northeast-2.amazonaws.com"
+    ap-southeast-1:
+      S3HostingZone: "Z3O0J2DXBE1FTB"
+      S3HostingEndpoint: "s3-website-ap-southeast-1.amazonaws.com"
+    ap-southeast-2:
+      S3HostingZone: "Z1WCIGYICN2BYD"
+      S3HostingEndpoint: "s3-website-ap-southeast-2.amazonaws.com"
+    eu-central-1:
+      S3HostingZone: "Z21DNDUVLTQW6Q"
+      S3HostingEndpoint: s3-website.eu-central-1.amazonaws.com
+    eu-west-1:
+      S3HostingZone: "Z1BKCTXD74EZPE"
+      S3HostingEndpoint: "s3-website-eu-west-1.amazonaws.com"
+    eu-west-2:
+      S3HostingZone: "Z3GKZC51ZF0DB4"
+      S3HostingEndpoint: "s3-website.eu-west-2.amazonaws.com"
+    sa-east-1:
+      S3HostingZone: "Z31GFT0UA1I2HV"
+      S3HostingEndpoint: "s3-website-sa-east-1.amazonaws.com"

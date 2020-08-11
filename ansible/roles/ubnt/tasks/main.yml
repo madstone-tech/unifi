@@ -1,9 +1,6 @@
 ---
-
-- name: install Java openjdk
-  yum:
-    name: java-1.8.0-openjdk-devel
-    lock_timeout: 120
+- name: install Corretto8
+  command: amaamazon-linux-extras install corretto8 -y
   become: yes
 
 - name: adding the MongoDB repo
@@ -17,7 +14,7 @@
   become: yes
 
 - name: install mongo-server
-  yum: 
+  yum:
     name: mongodb-org
     state: latest
     lock_timeout: 120
@@ -38,7 +35,7 @@
 
 - name: download unifi package
   unarchive:
-    src: 'https://dl.ui.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip'
+    src: "https://dl.ui.com/unifi/{{ _ubnt_version_ }}/UniFi.unix.zip"
     dest: /opt/
     owner: ubnt
     group: ubnt
@@ -53,7 +50,7 @@
   become: yes
 
 - name: start unifi service
-  service: 
+  service:
     name: unifi
     state: started
     enabled: yes

@@ -1,0 +1,150 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Load Balancer for Unifi Controller
+
+Parameters:
+  CertificateArn:
+    Type: String
+    Description: "HTTPS certificate ARN to attach to the load balancer"
+    AllowedPattern: ^NA|(arn:aws:acm:)([a-zA-Z0-9/:-])*([a-zA-Z0-9])$
+    Default: "NA"
+  Vpc:
+    Description: VPC to attach the security groups
+    Type: String
+    AllowedPattern: "^vpc-[a-zA-Z0-9]+$"
+    MinLength: 1
+  Subnets:
+    Description: Subnets to attach to the load balancer
+    Type: List<AWS::EC2::Subnet::Id>
+  LoadBalancerScheme:
+    Type: String
+    Default: "internet-facing"
+    MinLength: 1
+
+Resources:
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: !Ref LoadBalancerScheme
+      Subnets:
+        - !Select [0, !Ref Subnets]
+        - !Select [1, !Ref Subnets]
+      Type: network
+
+  LoadBalancerListenerPort10001:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 10001
+      Protocol: udp
+      DefaultActions:
+        - TargetGroupArn: !Ref UniFiControllerTargetGroup
+          Type: forward
+
+  LoadBalancerListenerPort8443:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 8443
+      Protocol: TCP
+      SslPolicy: ELBSecurityPolicy-FS-1-2-Res-2019-08
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort3478:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 3478
+      Protocol: UDP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort8080:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 8080
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort8880:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 8880
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort6789:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 6789
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort5514:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 5514
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  UniFiControllerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: LoadBalancer
+    Properties:
+      VpcId: !Ref Vpc
+      Protocol: HTTP
+      Matcher:
+        HttpCode: "200-299"
+      HealthCheckIntervalSeconds: 120
+      HealthCheckPath: /
+      HealthCheckProtocol: TCP
+      HealthCheckTimeoutSeconds: 30
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      TargetType: ip
+      Port: 8080
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "300"
+        - Key: load_balancing.algorithm.type
+          Value: "least_outstanding_requests"
+
+Outputs:
+  UniFiControllerTargetGroup:
+    Description: "Load balancer RocketChat Target Group ARN"
+    Value: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerDns:
+    Description: URL of the cluster load balancer.
+    Value: !GetAtt LoadBalancer.DNSName
+
+  LoadBalancerUrl:
+    Description: URL of the cluster load balancer.
+    Value: !Sub https://${LoadBalancer.DNSName}:8443
+
+  LoadBalancerArn:
+    Description: ARN of the cluster load balancer.
+    Value: !Ref LoadBalancer
+
+  LoadBalancerHostedZoneId:
+    Description: LoadBalancer Hosted Zone Id
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneID

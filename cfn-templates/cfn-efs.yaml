@@ -1,0 +1,60 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Template to create EFS for  cluster
+
+Parameters:
+  Subnets:
+    Description: Subnets to attach to the EFS
+    Type: List<AWS::EC2::Subnet::Id>
+  SecurityGroup:
+    Description: Security group to attach to the EFS
+    Type: AWS::EC2::SecurityGroup::Id
+
+Resources:
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-wordpress-efs"
+
+  EFSMountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Ref: EFSFileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !Select [0, !Ref Subnets]
+
+  EFSMountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Ref: EFSFileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !Select [1, !Ref Subnets]
+
+Outputs:
+  EFSFileSystemId:
+    Value: !Ref EFSFileSystem
+    Description: EFS FileSystem ID
+    Export:
+      Name: !Sub "${AWS::StackName}-EFSId"
+
+  EFSMountTargetAId:
+    Value: !Ref EFSMountTargetA
+    Description: MountTargetA
+    Export:
+      Name: !Sub "${AWS::StackName}-EFSMountA"
+
+  EFSMountTargetBId:
+    Value: !Ref EFSMountTargetB
+    Description: MountTargetB
+    Export:
+      Name: !Sub "${AWS::StackName}-EFSMountB"
+
