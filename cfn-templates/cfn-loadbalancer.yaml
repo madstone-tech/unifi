@@ -71,47 +71,46 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref UniFiControllerTargetGroup
-  #  LoadBalancerListenerPort3478:
-  #    Type: AWS::ElasticLoadBalancingV2::Listener
-  #    Properties:
-  #      LoadBalancerArn: !Ref LoadBalancer
-  #      Port: 3478
-  #      Protocol: UDP
-  #      DefaultActions:
-  #        - Type: forward
-  #          TargetGroupArn: !Ref UniFiControllerTargetGroup
-  #
-  #
-  #  LoadBalancerListenerPort8880:
-  #    Type: AWS::ElasticLoadBalancingV2::Listener
-  #    Properties:
-  #      LoadBalancerArn: !Ref LoadBalancer
-  #      Port: 8880
-  #      Protocol: TCP
-  #      DefaultActions:
-  #        - Type: forward
-  #          TargetGroupArn: !Ref UniFiControllerTargetGroup
-  #
-  #  LoadBalancerListenerPort6789:
-  #    Type: AWS::ElasticLoadBalancingV2::Listener
-  #    Properties:
-  #      LoadBalancerArn: !Ref LoadBalancer
-  #      Port: 6789
-  #      Protocol: TCP
-  #      DefaultActions:
-  #        - Type: forward
-  #          TargetGroupArn: !Ref UniFiControllerTargetGroup
-  #
-  #  LoadBalancerListenerPort5514:
-  #    Type: AWS::ElasticLoadBalancingV2::Listener
-  #    Properties:
-  #      LoadBalancerArn: !Ref LoadBalancer
-  #      Port: 5514
-  #      Protocol: TCP
-  #      DefaultActions:
-  #        - Type: forward
-  #          TargetGroupArn: !Ref UniFiControllerTargetGroup
 
+  LoadBalancerListenerPort3478:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 3478
+      Protocol: UDP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort8880:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 8880
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort6789:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 6789
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort5514:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 5514
+      Protocol: TCP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
 Outputs:
   UniFiControllerTargetGroup:
     Description: "Load balancer RocketChat Target Group ARN"
