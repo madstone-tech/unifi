@@ -45,7 +45,6 @@ Parameters:
     Type: String
     Description: CodeCommit Repo
 
-
   Latestx86AmiId:
     Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
     Default: "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
@@ -166,7 +165,7 @@ Resources:
                 pip3 install git-remote-codecommit
                 pip3 install ansible
                 pip3 install git-remote-codecommit
-                git clone -b cfn-templates codecommit://${ECRRepo}
+                git clone codecommit://${ECRRepo}
                 ansible-playbook ${ECRRepo}/ansible/bastionhost.yml
               - EFSId: !Ref EFSId
                 ECRRepo: !Ref ECRRepo
