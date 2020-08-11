@@ -97,20 +97,6 @@ Resources:
             - ActionTypeId:
                 Category: "Deploy"
                 Owner: "AWS"
-                Provider: "S3"
-                Version: "1"
-              Configuration:
-                BucketName: !Ref CfnTemplateS3
-                Extract: "true"
-              Name: "ZipToS3"
-              Region: !Ref AWS::Region
-              Namespace: "DeployVariables"
-              RunOrder: 2
-              InputArtifacts:
-                - Name: Artifact
-            - ActionTypeId:
-                Category: "Deploy"
-                Owner: "AWS"
                 Provider: "CloudFormation"
                 Version: "1"
               Configuration:
@@ -128,5 +114,5 @@ Resources:
                 - Name: Artifact
               Name: "DeployStack"
               Region: !Ref AWS::Region
-              RunOrder: 3
+              RunOrder: 2
           Name: "Deploy"
