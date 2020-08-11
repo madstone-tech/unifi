@@ -112,12 +112,8 @@ Resources:
     Properties:
       VpcId: !Ref Vpc
       Protocol: TCP
-      HealthCheckIntervalSeconds: 120
-      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
       HealthCheckProtocol: TCP
-      HealthCheckTimeoutSeconds: 30
-      HealthyThresholdCount: 3
-      UnhealthyThresholdCount: 3
       TargetType: ip
       Port: 8080
       TargetGroupAttributes:
