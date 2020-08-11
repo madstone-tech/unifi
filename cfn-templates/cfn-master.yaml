@@ -166,7 +166,6 @@ Resources:
           - - !GetAtt "VPC.Outputs.SubnetAPublic"
             - !GetAtt "VPC.Outputs.SubnetBPublic"
         BastionHostSG: !GetAtt SecurityGroups.Outputs.EC2SecurityGroup
-        SecurityGroup: !GetAtt SecurityGroups.Outputs.WordpressSG
         InstanceProfile: !GetAtt IAMRoles.Outputs.EC2InstanceProfile
         InstanceRole: !GetAtt IAMRoles.Outputs.EC2InstanceRole
         EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
@@ -199,3 +198,5 @@ Resources:
         - - !Sub "https://${S3BucketCFNTemplates}"
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-unificontroller.yaml
+
+

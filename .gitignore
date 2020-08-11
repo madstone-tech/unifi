@@ -1,5 +1,5 @@
 *.code-workspace
-
+cfn-templates/parameters/*
 # Compiled source #
 ###################
 *.com
