@@ -5,11 +5,6 @@ Description: >
   Load Balancer for UniFi Controller
 
 Parameters:
-  CertificateArn:
-    Type: String
-    Description: "HTTPS certificate ARN to attach to the load balancer"
-    AllowedPattern: ^NA|(arn:aws:acm:)([a-zA-Z0-9/:-])*([a-zA-Z0-9])$
-    Default: "NA"
   Vpc:
     Description: VPC to attach the security groups
     Type: String
@@ -72,10 +67,7 @@ Resources:
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 8443
-      Protocol: TLS
-      SslPolicy: ELBSecurityPolicy-FS-1-2-Res-2019-08
-      Certificates:
-        - CertificateArn: !Ref CertificateArn
+      Protocol: TCP
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref UniFiControllerTargetGroup

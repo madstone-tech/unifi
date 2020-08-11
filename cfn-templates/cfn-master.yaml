@@ -129,7 +129,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        CertificateArn: !GetAtt ACMCerts.Outputs.certificateArn
         Vpc: !GetAtt VPC.Outputs.VpcId
         Subnets: !Join
           - ","
