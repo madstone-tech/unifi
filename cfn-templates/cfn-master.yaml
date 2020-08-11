@@ -141,19 +141,19 @@ Resources:
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-loadbalancer.yaml
 
-  #  DNSRecords:
-  #    Type: AWS::CloudFormation::Stack
-  #    Properties:
-  #      Parameters:
-  #        HostedZoneId: !Ref HostedZoneId
-  #        LoadBalancerHostedZoneId: !GetAtt LoadBalancer.Outputs.LoadBalancerHostedZoneId
-  #        LoadBalancerDns: !GetAtt LoadBalancer.Outputs.LoadBalancerDns
-  #        ECSDomain: !Ref ECSDomain
-  #      TemplateURL: !Join
-  #        - ""
-  #        - - !Sub "https://${S3BucketCFNTemplates}"
-  #          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-  #          - cfn-dns-records.yaml
+  DNSRecords:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        HostedZoneId: !Ref HostedZoneId
+        LoadBalancerHostedZoneId: !GetAtt LoadBalancer.Outputs.LoadBalancerHostedZoneId
+        LoadBalancerDns: !GetAtt LoadBalancer.Outputs.LoadBalancerDns
+        ECSDomain: !Ref ECSDomain
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-dns-records.yaml
 
   ECSCluster:
     Type: AWS::CloudFormation::Stack
