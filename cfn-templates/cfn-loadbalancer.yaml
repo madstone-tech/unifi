@@ -66,18 +66,19 @@ Resources:
       DefaultActions:
         - TargetGroupArn: !Ref UniFiControllerTargetGroup
           Type: forward
-  #LoadBalancerListenerPort8443:
-  #  Type: AWS::ElasticLoadBalancingV2::Listener
-  #  Properties:
-  #    LoadBalancerArn: !Ref LoadBalancer
-  #    Port: 8443
-  #    Protocol: TLS
-  #    SslPolicy: ELBSecurityPolicy-FS-1-2-Res-2019-08
-  #    Certificates:
-  #      - CertificateArn: !Ref CertificateArn
-  #    DefaultActions:
-  #      - Type: forward
-  #        TargetGroupArn: !Ref UniFiControllerTargetGroup
+
+  LoadBalancerListenerPort8443:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 8443
+      Protocol: TLS
+      SslPolicy: ELBSecurityPolicy-FS-1-2-Res-2019-08
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
   #  LoadBalancerListenerPort3478:
   #    Type: AWS::ElasticLoadBalancingV2::Listener
   #    Properties:
