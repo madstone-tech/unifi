@@ -38,7 +38,7 @@ Resources:
     DependsOn: LoadBalancer
     Properties:
       VpcId: !Ref Vpc
-      Protocol: TCP
+      Protocol: TCP_UDP
       HealthCheckIntervalSeconds: 30
       HealthCheckProtocol: TCP
       TargetType: ip
@@ -47,16 +47,25 @@ Resources:
         - Key: deregistration_delay.timeout_seconds
           Value: "300"
 
-    #LoadBalancerListenerPort10001:
-    #  Type: AWS::ElasticLoadBalancingV2::Listener
-    #  Properties:
-    #    LoadBalancerArn: !Ref LoadBalancer
-    #    Port: 10001
-    #    Protocol: UDP
-    #    DefaultActions:
-    #      - TargetGroupArn: !Ref UniFiControllerTargetGroup
-    #        Type: forward
+  LoadBalancerListenerPort8080:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 8080
+      Protocol: TCP_UDP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref UniFiControllerTargetGroup
 
+  #LoadBalancerListenerPort10001:
+  #  Type: AWS::ElasticLoadBalancingV2::Listener
+  #  Properties:
+  #    LoadBalancerArn: !Ref LoadBalancer
+  #    Port: 10001
+  #    Protocol: UDP
+  #    DefaultActions:
+  #      - TargetGroupArn: !Ref UniFiControllerTargetGroup
+  #        Type: forward
   #LoadBalancerListenerPort8443:
   #  Type: AWS::ElasticLoadBalancingV2::Listener
   #  Properties:
@@ -79,15 +88,6 @@ Resources:
   #        - Type: forward
   #          TargetGroupArn: !Ref UniFiControllerTargetGroup
   #
-  #  LoadBalancerListenerPort8080:
-  #    Type: AWS::ElasticLoadBalancingV2::Listener
-  #    Properties:
-  #      LoadBalancerArn: !Ref LoadBalancer
-  #      Port: 8080
-  #      Protocol: TCP
-  #      DefaultActions:
-  #        - Type: forward
-  #          TargetGroupArn: !Ref UniFiControllerTargetGroup
   #
   #  LoadBalancerListenerPort8880:
   #    Type: AWS::ElasticLoadBalancingV2::Listener

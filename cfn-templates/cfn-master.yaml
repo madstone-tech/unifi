@@ -125,22 +125,22 @@ Resources:
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-efs.yaml
 
-  #  LoadBalancer:
-  #    Type: AWS::CloudFormation::Stack
-  #    Properties:
-  #      Parameters:
-  #        CertificateArn: !GetAtt ACMCerts.Outputs.certificateArn
-  #        Vpc: !GetAtt VPC.Outputs.VpcId
-  #        Subnets: !Join
-  #          - ","
-  #          - - !GetAtt "VPC.Outputs.SubnetAPublic"
-  #            - !GetAtt "VPC.Outputs.SubnetBPublic"
-  #        LoadBalancerScheme: "internet-facing"
-  #      TemplateURL: !Join
-  #        - ""
-  #        - - !Sub "https://${S3BucketCFNTemplates}"
-  #          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-  #          - cfn-loadbalancer.yaml
+  LoadBalancer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        CertificateArn: !GetAtt ACMCerts.Outputs.certificateArn
+        Vpc: !GetAtt VPC.Outputs.VpcId
+        Subnets: !Join
+          - ","
+          - - !GetAtt "VPC.Outputs.SubnetAPublic"
+            - !GetAtt "VPC.Outputs.SubnetBPublic"
+        LoadBalancerScheme: "internet-facing"
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-loadbalancer.yaml
 
   #  DNSRecords:
   #    Type: AWS::CloudFormation::Stack
