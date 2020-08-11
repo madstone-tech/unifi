@@ -80,7 +80,6 @@ Resources:
               RunOrder: 1
           Name: "Source"
         - Actions:
-          Name: "Deploy"
             - ActionTypeId:
                 Category: "Deploy"
                 Owner: "AWS"
@@ -89,7 +88,7 @@ Resources:
               Configuration:
                 BucketName: !Ref CfnTemplateS3
                 Extract: "true"
-              Name: "Deploy"
+              Name: "ExtractToS3"
               Region: !Ref AWS::Region
               Namespace: "DeployVariables"
               RunOrder: 1
@@ -130,3 +129,4 @@ Resources:
               Name: "DeployStack"
               Region: !Ref AWS::Region
               RunOrder: 3
+          Name: "Deploy"
