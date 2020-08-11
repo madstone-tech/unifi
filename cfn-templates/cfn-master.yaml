@@ -90,23 +90,6 @@ Resources:
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-s3buckets.yaml
 
-  LoadBalancer:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        CertificateArn: !GetAtt ACMCerts.Outputs.certificateArn
-        Vpc: !GetAtt VPC.Outputs.VpcId
-        Subnets: !Join
-          - ","
-          - - !GetAtt "VPC.Outputs.SubnetAPublic"
-            - !GetAtt "VPC.Outputs.SubnetBPublic"
-        LoadBalancerScheme: "internet-facing"
-      TemplateURL: !Join
-        - ""
-        - - !Sub "https://${S3BucketCFNTemplates}"
-          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-          - cfn-loadbalancer.yaml
-
   IAMRoles:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -127,20 +110,6 @@ Resources:
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-logs.yaml
 
-  DNSRecords:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        HostedZoneId: !Ref HostedZoneId
-        LoadBalancerHostedZoneId: !GetAtt LoadBalancer.Outputs.LoadBalancerHostedZoneId
-        LoadBalancerDns: !GetAtt LoadBalancer.Outputs.LoadBalancerDns
-        ECSDomain: !Ref ECSDomain
-      TemplateURL: !Join
-        - ""
-        - - !Sub "https://${S3BucketCFNTemplates}"
-          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-          - cfn-dns-records.yaml
-
   EFS:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -155,6 +124,37 @@ Resources:
         - - !Sub "https://${S3BucketCFNTemplates}"
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-efs.yaml
+
+  #  LoadBalancer:
+  #    Type: AWS::CloudFormation::Stack
+  #    Properties:
+  #      Parameters:
+  #        CertificateArn: !GetAtt ACMCerts.Outputs.certificateArn
+  #        Vpc: !GetAtt VPC.Outputs.VpcId
+  #        Subnets: !Join
+  #          - ","
+  #          - - !GetAtt "VPC.Outputs.SubnetAPublic"
+  #            - !GetAtt "VPC.Outputs.SubnetBPublic"
+  #        LoadBalancerScheme: "internet-facing"
+  #      TemplateURL: !Join
+  #        - ""
+  #        - - !Sub "https://${S3BucketCFNTemplates}"
+  #          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+  #          - cfn-loadbalancer.yaml
+
+  #  DNSRecords:
+  #    Type: AWS::CloudFormation::Stack
+  #    Properties:
+  #      Parameters:
+  #        HostedZoneId: !Ref HostedZoneId
+  #        LoadBalancerHostedZoneId: !GetAtt LoadBalancer.Outputs.LoadBalancerHostedZoneId
+  #        LoadBalancerDns: !GetAtt LoadBalancer.Outputs.LoadBalancerDns
+  #        ECSDomain: !Ref ECSDomain
+  #      TemplateURL: !Join
+  #        - ""
+  #        - - !Sub "https://${S3BucketCFNTemplates}"
+  #          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+  #          - cfn-dns-records.yaml
 
   ECSCluster:
     Type: AWS::CloudFormation::Stack
@@ -177,26 +177,24 @@ Resources:
         - - !Sub "https://${S3BucketCFNTemplates}"
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-ecscluster.yaml
-
-  UniFiController:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        ECSCluster: !GetAtt ECSCluster.Outputs.Cluster
-        ContainerCpu: "1024"
-        ContainerMemory: "2048"
-        ClusterRoleArn: !GetAtt IAMRoles.Outputs.ECSClusterRole
-        TargetGroupArn: !GetAtt LoadBalancer.Outputs.WordpressTargetGroupArn
-        Subnets: !Join
-          - ","
-          - - !GetAtt "VPC.Outputs.SubnetAPublic"
-            - !GetAtt "VPC.Outputs.SubnetBPublic"
-        SecurityGroup: !GetAtt SecurityGroups.Outputs.WordpressSG
-        EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
-      TemplateURL: !Join
-        - ""
-        - - !Sub "https://${S3BucketCFNTemplates}"
-          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-          - cfn-unificontroller.yaml
-
-
+#  UniFiController:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      Parameters:
+#        ECSCluster: !GetAtt ECSCluster.Outputs.Cluster
+#        ContainerCpu: "1024"
+#        ContainerMemory: "2048"
+#        ClusterRoleArn: !GetAtt IAMRoles.Outputs.ECSClusterRole
+#        TargetGroupArn: !GetAtt LoadBalancer.Outputs.WordpressTargetGroupArn
+#        Subnets: !Join
+#          - ","
+#          - - !GetAtt "VPC.Outputs.SubnetAPublic"
+#            - !GetAtt "VPC.Outputs.SubnetBPublic"
+#        SecurityGroup: !GetAtt SecurityGroups.Outputs.WordpressSG
+#        EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
+#      TemplateURL: !Join
+#        - ""
+#        - - !Sub "https://${S3BucketCFNTemplates}"
+#          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+#          - cfn-unificontroller.yaml
+#
