@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Description: >
-  Load Balancer for Unifi Controller
+  Load Balancer for UniFi Controller
 
 Parameters:
   CertificateArn:
