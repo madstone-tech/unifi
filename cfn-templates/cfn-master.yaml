@@ -176,24 +176,24 @@ Resources:
         - - !Sub "https://${S3BucketCFNTemplates}"
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-ecscluster.yaml
-#  UniFiController:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      Parameters:
-#        ECSCluster: !GetAtt ECSCluster.Outputs.Cluster
-#        ContainerCpu: "1024"
-#        ContainerMemory: "2048"
-#        ClusterRoleArn: !GetAtt IAMRoles.Outputs.ECSClusterRole
-#        TargetGroupArn: !GetAtt LoadBalancer.Outputs.WordpressTargetGroupArn
-#        Subnets: !Join
-#          - ","
-#          - - !GetAtt "VPC.Outputs.SubnetAPublic"
-#            - !GetAtt "VPC.Outputs.SubnetBPublic"
-#        SecurityGroup: !GetAtt SecurityGroups.Outputs.WordpressSG
-#        EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
-#      TemplateURL: !Join
-#        - ""
-#        - - !Sub "https://${S3BucketCFNTemplates}"
-#          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-#          - cfn-unificontroller.yaml
-#
+
+  UniFiController:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        ECSCluster: !GetAtt ECSCluster.Outputs.Cluster
+        ContainerCpu: "1024"
+        ContainerMemory: "2048"
+        ClusterRoleArn: !GetAtt IAMRoles.Outputs.ECSClusterRole
+        TargetGroupArn: !GetAtt LoadBalancer.Outputs.UniFiControllerTargetGroup
+        Subnets: !Join
+          - ","
+          - - !GetAtt "VPC.Outputs.SubnetAPublic"
+            - !GetAtt "VPC.Outputs.SubnetBPublic"
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.UnifiControllerSG
+        EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-unificontroller.yaml

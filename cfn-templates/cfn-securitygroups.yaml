@@ -19,41 +19,6 @@ Resources:
           ToPort: 22
           CidrIp: "0.0.0.0/0"
 
-  LoadBalancerSecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
-    Properties:
-      GroupDescription: "Unifi-Controller-LB"
-      VpcId: !Ref Vpc
-      SecurityGroupIngress:
-        - FromPort: 3478
-          IpProtocol: udp
-          ToPort: 3478
-          CidrIp: "0.0.0.0/0"
-        - FromPort: 8080
-          IpProtocol: tcp
-          ToPort: 8080
-          CidrIp: "0.0.0.0/0"
-        - FromPort: 8880
-          IpProtocol: tcp
-          ToPort: 8880
-          CidrIp: "0.0.0.0/0"
-        - FromPort: 8443
-          IpProtocol: tcp
-          ToPort: 8443
-          CidrIp: "0.0.0.0/0"
-        - FromPort: 6789
-          IpProtocol: tcp
-          ToPort: 6789
-          CidrIp: "0.0.0.0/0"
-        - FromPort: 80
-          IpProtocol: tcp
-          ToPort: 80
-          CidrIp: "0.0.0.0/0"
-        - FromPort: 443
-          IpProtocol: tcp
-          ToPort: 443
-          CidrIp: "0.0.0.0/0"
-
   UnifiControllerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -63,38 +28,35 @@ Resources:
         - FromPort: 3478
           IpProtocol: udp
           ToPort: 3478
-          SourceSecurityGroupId:
-            Ref: LoadBalancerSecurityGroup
+          CidrIp: "0.0.0.0/0"
+        - FromPort: 10001
+          IpProtocol: udp
+          ToPort: 10001
+          CidrIp: "0.0.0.0/0"
         - FromPort: 8080
           IpProtocol: tcp
           ToPort: 8080
-          SourceSecurityGroupId:
-            Ref: LoadBalancerSecurityGroup
+          CidrIp: "0.0.0.0/0"
         - FromPort: 8880
           IpProtocol: tcp
           ToPort: 8880
-          SourceSecurityGroupId:
-            Ref: LoadBalancerSecurityGroup
+          CidrIp: "0.0.0.0/0"
         - FromPort: 8443
           IpProtocol: tcp
           ToPort: 8443
-          SourceSecurityGroupId:
-            Ref: LoadBalancerSecurityGroup
+          CidrIp: "0.0.0.0/0"
         - FromPort: 6789
           IpProtocol: tcp
           ToPort: 6789
-          SourceSecurityGroupId:
-            Ref: LoadBalancerSecurityGroup
+          CidrIp: "0.0.0.0/0"
         - FromPort: 80
           IpProtocol: tcp
           ToPort: 80
-          SourceSecurityGroupId:
-            Ref: LoadBalancerSecurityGroup
+          CidrIp: "0.0.0.0/0"
         - FromPort: 443
           IpProtocol: tcp
           ToPort: 443
-          SourceSecurityGroupId:
-            Ref: LoadBalancerSecurityGroup
+          CidrIp: "0.0.0.0/0"
 
   EFSSG:
     Type: AWS::EC2::SecurityGroup
@@ -117,10 +79,6 @@ Outputs:
   EC2SecurityGroup:
     Description: "EC2 SG"
     Value: !GetAtt EC2SecurityGroup.GroupId
-
-  LoadBalancerSecurityGroup:
-    Description: "LoadBalancer SG"
-    Value: !Ref LoadBalancerSecurityGroup
 
   UnifiControllerSG:
     Description: "Unifi Controller SG"
