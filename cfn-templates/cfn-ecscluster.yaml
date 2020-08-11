@@ -43,7 +43,7 @@ Parameters:
 
   ECRRepo:
     Type: String
-    Description: ECR Repo
+    Description: CodeCommit Repo
 
 
   Latestx86AmiId:

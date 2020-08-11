@@ -44,6 +44,10 @@ Parameters:
   SSHKeyPair:
     Type: AWS::EC2::KeyPair::KeyName
 
+  ECRRepo:
+    Type: String
+    Description: CodeCommit Repo
+
 Resources:
   VPC:
     Type: AWS::CloudFormation::Stack
@@ -169,6 +173,7 @@ Resources:
         EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
         ECSDomain: !Ref ECSDomain
         EnvironmentName: !Ref EnvironmentName
+        ECRRepo: !Ref ECRRepo
       TemplateURL: !Join
         - ""
         - - !Sub "https://${S3BucketCFNTemplates}"
