@@ -100,7 +100,6 @@ Resources:
           - ","
           - - !GetAtt "VPC.Outputs.SubnetAPublic"
             - !GetAtt "VPC.Outputs.SubnetBPublic"
-        SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
         LoadBalancerScheme: "internet-facing"
       TemplateURL: !Join
         - ""

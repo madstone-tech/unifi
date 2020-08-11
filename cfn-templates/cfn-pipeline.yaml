@@ -1,11 +1,55 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "UniFi Controller CFN Pipeline"
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Domain Parameters"
+        Parameters:
+          - Route53ZoneName
+          - HostedZoneId
+          - ECSDomain
+      - Label:
+          default: "Cluster Environment Parameters"
+        Parameters:
+          - SSHKeyPair
+          - EnvironmentName
+      - Label:
+          default: "CI/CD Parameters"
+          Parametrs:
+            - RepositoryName
+            - BranchName
+
 Parameters:
   BranchName:
     Type: String
     Default: master
+    Description: Branch Name to use for CodePipeline
+
   RepositoryName:
     Type: String
+    Description: CodeCommit Repo with CFN templates
+
+  Route53ZoneName:
+    Type: String
+    Description: Name of your Route53 ZoneName
+
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Pick the HostedZoneId of the Route53 Zone Name
+
+  ECSDomain:
+    Type: String
+    Description: base domain of the app i.e. ubnt.domain.com
+  SSHKeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+
+  ECRRepo:
+    Type: String
+    Description: CodeCommit Repo
+  EnvironmentName:
+    Type: String
+    Description: Name of the environment
 
 Resources:
   ArtifactS3Bucket:
@@ -104,11 +148,17 @@ Resources:
                 Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND"
                 RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CloudFormationAdminRole"
                 StackName: "unifi-controller"
-                TemplateConfiguration: "Artifact::cfn-templates/parameters/cfn-parameters.json"
+                #TemplateConfiguration: "Artifact::cfn-templates/parameters/cfn-parameters.json"
                 TemplatePath: "Artifact::cfn-templates/cfn-master.yaml"
                 ParameterOverrides: !Sub |
                   {
-                    "S3BucketCFNTemplates": "${CfnTemplateS3}"
+                    "Route53ZoneName": "${Route53ZoneName}",
+                    "HostedZoneId": "${HostedZoneId}",
+                    "ECSDomain": "${ECSDomain}",
+                    "EnvironmentName": "${EnvironmentName}",
+                    "S3BucketCFNTemplates": "${CfnTemplateS3}",
+                    "SSHKeyPair": "${SSHKeyPair}",
+                    "ECRRepo": "${ECRRepo}"
                   }
               InputArtifacts:
                 - Name: Artifact
