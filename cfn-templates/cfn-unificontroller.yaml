@@ -7,7 +7,7 @@ Parameters:
     Type: String
   DesiredCount:
     Type: Number
-    Default: 2
+    Default: 1
   ContainerCpu:
     Type: Number
     Default: 1024
@@ -98,7 +98,7 @@ Resources:
       PlatformVersion: "1.4.0"
       LoadBalancers:
         - ContainerName: "unifi-controller"
-          ContainerPort: 8080
+          ContainerPort: 8443
           TargetGroupArn: !Ref TargetGroupArn
       NetworkConfiguration:
         AwsvpcConfiguration:

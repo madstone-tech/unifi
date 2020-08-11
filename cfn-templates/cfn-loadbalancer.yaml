@@ -37,7 +37,7 @@ Resources:
       HealthCheckIntervalSeconds: 30
       HealthCheckProtocol: TCP
       TargetType: ip
-      Port: 8080
+      Port: 8443
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
           Value: "300"
