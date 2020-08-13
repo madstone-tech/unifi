@@ -39,9 +39,10 @@ Resources:
     DependsOn: LoadBalancer
     Properties:
       VpcId: !Ref Vpc
-      Protocol: TCP_UDP
+      Protocol: TLS
+      HealthCheckPort: "8443"
       HealthCheckIntervalSeconds: 30
-      HealthCheckProtocol: HTTPS
+      HealthCheckProtocol: TLS
       TargetType: ip
       Port: 8443
       TargetGroupAttributes:
