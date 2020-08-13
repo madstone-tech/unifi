@@ -42,7 +42,7 @@ Resources:
       Protocol: TLS
       HealthCheckPort: "8443"
       HealthCheckIntervalSeconds: 30
-      HealthCheckProtocol: TLS
+      HealthCheckProtocol: TCP
       TargetType: ip
       Port: 8443
       TargetGroupAttributes:
