@@ -70,10 +70,10 @@ Resources:
 
   LoadBalancerCertificates:
     Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
-      Properties:
-        Certificates:
-          - !Ref CertificateArn
-        ListenerArn: !Ref LoadBalancerListenerPort8443
+    Properties:
+      Certificates:
+        - !Ref CertificateArn
+      ListenerArn: !Ref LoadBalancerListenerPort8443
 
   LoadBalancerListenerPort8443:
     Type: AWS::ElasticLoadBalancingV2::Listener
