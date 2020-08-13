@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 
 Description: >
-  IAM Roles policies
+  IAM Roles policies  | UniFi Controller
 
 Resources:
   EC2InstanceRole:
@@ -61,12 +61,9 @@ Resources:
                   - "elasticloadbalancing:*"
                   - "ecr:*"
                   - "cloudwatch:*"
-                  - "s3:*"
-                  - "rds:*"
                   - "sqs:*"
                   - "sns:*"
                   - "logs:*"
-                  - "ssm:*"
                 Resource: "*"
 
 Outputs:

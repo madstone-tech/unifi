@@ -5,6 +5,12 @@ Description: >
   Load Balancer for UniFi Controller
 
 Parameters:
+  CertificateArn:
+    Type: String
+    Description: "HTTPS certificate ARN to attach to the load balancer"
+    AllowedPattern: ^NA|(arn:aws:acm:)([a-zA-Z0-9/:-])*([a-zA-Z0-9])$
+    Default: "NA"
+
   Vpc:
     Description: VPC to attach the security groups
     Type: String
@@ -35,7 +41,7 @@ Resources:
       VpcId: !Ref Vpc
       Protocol: TCP_UDP
       HealthCheckIntervalSeconds: 30
-      HealthCheckProtocol: TCP
+      HealthCheckProtocol: TLS
       TargetType: ip
       Port: 8443
       TargetGroupAttributes:
@@ -62,12 +68,19 @@ Resources:
         - TargetGroupArn: !Ref UniFiControllerTargetGroup
           Type: forward
 
+  LoadBalancerCertificates:
+    Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
+      Properties:
+        Certificates:
+          - !Ref CertificateArn
+        ListenerArn: !Ref LoadBalancerListenerPort8443
+
   LoadBalancerListenerPort8443:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 8443
-      Protocol: TCP
+      Protocol: TLS
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref UniFiControllerTargetGroup
