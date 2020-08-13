@@ -39,7 +39,7 @@ Resources:
     DependsOn: LoadBalancer
     Properties:
       VpcId: !Ref Vpc
-      Protocol: TLS
+      Protocol: TCP_UDP
       HealthCheckPort: "8443"
       HealthCheckIntervalSeconds: 30
       HealthCheckProtocol: TCP
@@ -69,19 +69,12 @@ Resources:
         - TargetGroupArn: !Ref UniFiControllerTargetGroup
           Type: forward
 
-  LoadBalancerCertificates:
-    Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
-    Properties:
-      Certificates:
-        - !Ref CertificateArn
-      ListenerArn: !Ref LoadBalancerListenerPort8443
-
   LoadBalancerListenerPort8443:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 8443
-      Protocol: TLS
+      Protocol: TCP_UDP
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref UniFiControllerTargetGroup
