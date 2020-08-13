@@ -41,7 +41,7 @@ Resources:
       VpcId: !Ref Vpc
       Protocol: TCP_UDP
       HealthCheckIntervalSeconds: 30
-      HealthCheckProtocol: TLS
+      HealthCheckProtocol: HTTPS
       TargetType: ip
       Port: 8443
       TargetGroupAttributes:
