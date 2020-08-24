@@ -13,19 +13,7 @@ services:
       - 8880:8880
       - 8843:8843
       - 6789:6789
-    environment:
-      UNIFI_CONTROLLER_VERSION: 5.13.32
     networks:
       - unifi-net
-  mongo:
-    image: mongo:latest
-    container_name: mongo
-    restart: unless-stopped
-    volumes:
-      - unifi-data:/data/db
-    ports:
-    volumes:
-  unifi-data:
-
 networks:
   unifi-net:

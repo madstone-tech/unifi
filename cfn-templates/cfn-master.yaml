@@ -12,7 +12,6 @@ Metadata:
       - Label:
           default: "Domain Parameters"
         Parameters:
-          - Route53ZoneName
           - HostedZoneId
           - ECSDomain
       - Label:
@@ -24,10 +23,6 @@ Parameters:
   EnvironmentName:
     Type: String
     Description: Name of the environment
-
-  Route53ZoneName:
-    Type: String
-    Description: Name of your Route53 ZoneName
 
   HostedZoneId:
     Type: AWS::Route53::HostedZone::Id
@@ -44,9 +39,8 @@ Parameters:
   SSHKeyPair:
     Type: AWS::EC2::KeyPair::KeyName
 
-  ECRRepo:
-    Type: String
-    Description: CodeCommit Repo
+  ContainerRegistryName:
+    Type: string
 
 Resources:
   VPC:
@@ -58,18 +52,6 @@ Resources:
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-vpc-2azs.yaml
 
-  ACMCerts:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        ZoneName: !Ref Route53ZoneName
-        ECSDomainName: !Ref ECSDomain
-      TemplateURL: !Join
-        - ""
-        - - !Sub "https://${S3BucketCFNTemplates}"
-          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-          - cfn-acm.yaml
-
   SecurityGroups:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -80,15 +62,6 @@ Resources:
         - - !Sub "https://${S3BucketCFNTemplates}"
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-securitygroups.yaml
-
-  S3Bucket:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Join
-        - ""
-        - - !Sub "https://${S3BucketCFNTemplates}"
-          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
-          - cfn-s3buckets.yaml
 
   IAMRoles:
     Type: AWS::CloudFormation::Stack
@@ -129,7 +102,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        CertificateArn: !GetAtt ACMCerts.Outputs.certificateArn
         Vpc: !GetAtt VPC.Outputs.VpcId
         Subnets: !Join
           - ","
@@ -171,7 +143,7 @@ Resources:
         EFSId: !GetAtt EFS.Outputs.EFSFileSystemId
         ECSDomain: !Ref ECSDomain
         EnvironmentName: !Ref EnvironmentName
-        ECRRepo: !Ref ECRRepo
+        AnsibleS3Bucket: !Ref S3BucketCFNTemplates
       TemplateURL: !Join
         - ""
         - - !Sub "https://${S3BucketCFNTemplates}"
@@ -183,6 +155,7 @@ Resources:
     Properties:
       Parameters:
         ECSCluster: !GetAtt ECSCluster.Outputs.Cluster
+        DesiredCount: "1"
         ContainerCpu: "1024"
         ContainerMemory: "2048"
         ClusterRoleArn: !GetAtt IAMRoles.Outputs.ECSClusterRole
@@ -198,3 +171,28 @@ Resources:
         - - !Sub "https://${S3BucketCFNTemplates}"
           - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
           - cfn-unificontroller.yaml
+  UpdatePipelineArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 2
+            Status: Enabled
+
+  UpdatePipeline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        CodeBuildServiceRoleArn: !GetAtt IAMRoles.Outputs.CodeBuildServiceRoleArn
+        ImageTag: latest
+        CodePipelineServiceRoleArn: !GetAtt IAMRoles.Outputs.CodePipelineServiceRoleArn
+        ArtifactBucket: !Ref UpdatePipelineArtifactBucket
+        ClusterName: !GetAtt ECSCluster.Outputs.Cluster
+        ServiceName: !GetAtt UniFiController.Outputs.UnifiControllerServiceName
+        ContainerRegistry: !Ref ContainerRegistryName
+      TemplateURL: !Join
+        - ""
+        - - !Sub "https://${S3BucketCFNTemplates}"
+          - !Sub ".s3.${AWS::Region}.amazonaws.com/cfn-templates/"
+          - cfn-update-pipeline.yaml

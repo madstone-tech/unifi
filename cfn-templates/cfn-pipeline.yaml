@@ -6,7 +6,6 @@ Metadata:
       - Label:
           default: "Domain Parameters"
         Parameters:
-          - Route53ZoneName
           - HostedZoneId
           - ECSDomain
       - Label:
@@ -17,7 +16,6 @@ Metadata:
       - Label:
           default: "CI/CD Parameters"
           Parametrs:
-            - RepositoryName
             - BranchName
 
 Parameters:
@@ -25,14 +23,6 @@ Parameters:
     Type: String
     Default: master
     Description: Branch Name to use for CodePipeline
-
-  RepositoryName:
-    Type: String
-    Description: CodeCommit Repo with CFN templates
-
-  Route53ZoneName:
-    Type: String
-    Description: Name of your Route53 ZoneName
 
   HostedZoneId:
     Type: AWS::Route53::HostedZone::Id
@@ -44,19 +34,70 @@ Parameters:
   SSHKeyPair:
     Type: AWS::EC2::KeyPair::KeyName
 
-  ECRRepo:
-    Type: String
-    Description: CodeCommit Repo
   EnvironmentName:
     Type: String
     Description: Name of the environment
 
 Resources:
+  CodeCommit:
+    Type: "AWS::CodeCommit::Repository"
+    Properties:
+      RepositoryDescription: !Sub "Infrastructure Repo for ${EnvironmentName}"
+      RepositoryName: "unifi-controller"
+
   ArtifactS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 2
+            Status: Enabled
+  AnsibleS3Bucket:
     Type: AWS::S3::Bucket
 
   CfnTemplateS3:
     Type: AWS::S3::Bucket
+
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryPolicyText: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "CodeBuildAccess",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "codebuild.amazonaws.com"
+              },
+              "Action": [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:BatchCheckLayerAvailability"
+              ]
+            }
+          ]
+        }
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
@@ -98,7 +139,126 @@ Resources:
                   - codecommit:CancelUploadArchive
                   - ssm:*
 
-  CodePipelinePipeline:
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ecr:GetAuthorizationToken
+                  - ecr:GetRepositoryPolicy
+                  - ecr:SetRepositoryPolicy
+                  - ssm:*
+                  - s3:*
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecs:*
+                  - iam:PassRole
+
+  ContainerBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Description: Building Container Images for Unifi-Controller
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: "CODEPIPELINE"
+      Source:
+        Type: "CODEPIPELINE"
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - echo Logging in to Amazon ECR....
+                - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+            build:
+              commands:
+                - echo "Building the Unifi controller image..."
+                - docker build -t $IMAGE_REPO:$IMAGE_TAG -f containers/Dockerfile .
+                - docker tag $IMAGE_REPO:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO:$IMAGE_TAG
+                - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO
+            post_build:
+              commands:
+                - echo Build completed on `date`
+                - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:%s"}]' "$IMAGE_REPO" "$AWS_ACCOUNT_ID" "$AWS_DEFAULT_REGION" "$IMAGE_REPO" "$IMAGE_TAG" > image.json
+                - cat image.json
+          artifacts:
+            files:
+              - image.json
+      Environment:
+        ComputeType: "BUILD_GENERAL1_LARGE"
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
+        Type: "LINUX_CONTAINER"
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: AWS_ACCOUNT_ID
+            Value: !Sub ${AWS::AccountId}
+          - Name: IMAGE_TAG
+            Value: "latest"
+          - Name: IMAGE_REPO
+            Value: !Ref ECRRepository
+
+  BuildPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Location: !Ref ArtifactS3Bucket
+        Type: S3
+      Stages:
+        - Name: Commit
+          Actions:
+            - Name: SimpleHelpCodeCommit
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: "1"
+                Provider: CodeCommit
+              Configuration:
+                RepositoryName: !GetAtt CodeCommit.Name
+                BranchName: containerbuild
+              OutputArtifacts:
+                - Name: App
+        - Name: BuildContainers
+          Actions:
+            - Name: BuildUniFiControllerContainer
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref ContainerBuild
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+
+  DeployPipeline:
     Type: "AWS::CodePipeline::Pipeline"
     Properties:
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
@@ -114,8 +274,7 @@ Resources:
                 Version: "1"
               Configuration:
                 BranchName: !Ref BranchName
-                PollForSourceChanges: "false"
-                RepositoryName: !Ref RepositoryName
+                RepositoryName: !GetAtt CodeCommit.Name
               Name: "Source"
               OutputArtifacts:
                 - Name: Artifact
@@ -147,18 +306,17 @@ Resources:
                 ActionMode: "CREATE_UPDATE"
                 Capabilities: "CAPABILITY_IAM,CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND"
                 RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CloudFormationAdminRole"
-                StackName: "unifi-controller"
-                #TemplateConfiguration: "Artifact::cfn-templates/parameters/cfn-parameters.json"
+                StackName: "unifi-controller-app"
+                TemplateConfiguration: "Artifact::cfn-templates/parameters/cfn-parameters.json"
                 TemplatePath: "Artifact::cfn-templates/cfn-master.yaml"
                 ParameterOverrides: !Sub |
                   {
-                    "Route53ZoneName": "${Route53ZoneName}",
                     "HostedZoneId": "${HostedZoneId}",
                     "ECSDomain": "${ECSDomain}",
                     "EnvironmentName": "${EnvironmentName}",
                     "S3BucketCFNTemplates": "${CfnTemplateS3}",
                     "SSHKeyPair": "${SSHKeyPair}",
-                    "ECRRepo": "${ECRRepo}"
+                    "ContainerRegistryName": "${ECRRepository}"
                   }
               InputArtifacts:
                 - Name: Artifact
@@ -166,3 +324,56 @@ Resources:
               Region: !Ref AWS::Region
               RunOrder: 2
           Name: "Deploy"
+
+Outputs:
+  DeployPipelineUrl:
+    Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${DeployPipeline}
+    Description: Deploy Pipeline Url
+
+  BuildPipelineUrl:
+    Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${BuildPipeline}
+    Description: Build Pipeline Url
+
+  Repository:
+    Description: "ECR repository"
+    Value: !Ref ECRRepository
+
+  RepositoryArn:
+    Description: "ECR repository Arn"
+    Value: !GetAtt ECRRepository.Arn
+
+  CodeCommitName:
+    Description: CodeCommit Repo Name"
+    Value: !GetAtt CodeCommit.Name
+
+  CodeCommitSSH:
+    Description: CodeCommit Repo SSH"
+    Value: !GetAtt CodeCommit.CloneUrlSsh
+
+  CodeCommitHttp:
+    Description: CodeCommit Repo Http"
+    Value: !GetAtt CodeCommit.CloneUrlHttp
+
+  ArtifactS3BucketName:
+    Description: Name of the s3 bucket
+    Value: !Ref ArtifactS3Bucket
+
+  ArtifactS3BucketNameArn:
+    Description: Arn of the s3 bucket
+    Value: !GetAtt ArtifactS3Bucket.Arn
+
+  AnsibleS3BucketName:
+    Description: Name of the Ansible s3 bucket
+    Value: !Ref AnsibleS3Bucket
+
+  AnsibleS3BucketArn:
+    Description: Arn of the s3 bucket
+    Value: !GetAtt AnsibleS3Bucket.Arn
+
+  CfnTemplateS3Name:
+    Description: Name of the s3 bucket
+    Value: !Ref CfnTemplateS3
+
+  CfnTemplateS3Arn:
+    Description: Arn of the s3 bucket
+    Value: !GetAtt CfnTemplateS3.Arn
